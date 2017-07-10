@@ -1,5 +1,6 @@
 resolver: lts-8.22
 packages:
   - .
-extra-deps: []
+extra-deps:
+  - twitter-conduit-0.2.2.1
 flags: {}

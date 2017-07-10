@@ -16,5 +16,27 @@ extra-source-files:  README.md
 executable MakeFunny
   hs-source-dirs:      src
   main-is:             Main.hs
+  other-modules:       Api
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
+                     , bytestring
+                     , conduit-combinators
+                     , lens
+                     , resourcet
+                     , twitter-conduit
+                     , twitter-types
+                     , twitter-types-lens
+
+                     , aeson
+                     , text
+                     , time
+
+executable MakeAuth
+  hs-source-dirs:      src
+  main-is:             Auth.hs
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
+                     , authenticate-oauth
+                     , bytestring
+                     , http-client
+                     , twitter-conduit
