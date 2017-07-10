@@ -54,7 +54,6 @@ main = do
 
   sourceName <- getEnv "FUNNY_SOURCE"
 
-  moderator        <- getEnv "FUNNY_MODERATOR"
   moderator_token  <- getEnv "FUNNY_MODERATOR_TOKEN"
   moderator_secret <- getEnv "FUNNY_MODERATOR_SECRET"
 
