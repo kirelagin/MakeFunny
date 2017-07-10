@@ -1,4 +1,4 @@
-* Watch moderator likes
 * Track name and bio
 * Track userpic
-* Clean auth handling
+* Initially synchronise those same things (plus url) on start up
+* Cleaner auth handling
