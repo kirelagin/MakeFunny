@@ -4,7 +4,6 @@ module Main where
 
 import Conduit
 import Control.Lens ((^.))
-import Control.Monad (guard)
 import Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.ByteString.Char8 as BS8
 import System.Environment (getEnv)
@@ -32,14 +31,14 @@ watchLikes modId srcId twInfo mgr = concatMapC event .| mapM_C process
   event (SEvent e) = Just e
   event _          = Nothing
 
-  process e | e ^. evEvent == "favorite"   = assertUsers *> liftIO rt *> pure ()
-            | e ^. evEvent == "unfavorite" = assertUsers *> liftIO unrt *> pure ()
-            | otherwise                    = pure ()
+  process e | e ^. evEvent == "favorite"   && rightUsers = liftIO rt *> pure ()
+            | e ^. evEvent == "unfavorite" && rightUsers = liftIO unrt *> pure ()
+            | otherwise                                  = pure ()
     where
-      assertUsers =
+      rightUsers =
         let ETUser srcUser = e ^. evSource
             ETUser tgtUser = e ^. evTarget
-        in guard $ (srcUser ^. userId == modId) && (tgtUser ^. userId == srcId)
+        in (srcUser ^. userId == modId) && (tgtUser ^. userId == srcId)
       twId = let Just (ETStatus s) = e ^. evTargetObject in s ^. statusId
       rt = call twInfo mgr $ retweetId twId
       unrt = call twInfo mgr $ unretweetId twId
