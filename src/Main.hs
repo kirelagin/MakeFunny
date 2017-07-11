@@ -3,12 +3,12 @@
 module Main where
 
 import Conduit
-import Control.Lens ((^.))
+import Control.Lens
 import Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.ByteString.Char8 as BS8
 import System.Environment (getEnv)
 import Web.Twitter.Conduit
-import Web.Twitter.Types (Event(Event), StreamingAPI(SEvent))
+import Web.Twitter.Types (StreamingAPI(SEvent))
 import Web.Twitter.Types.Lens
 
 import Api (unretweetId)
@@ -26,21 +26,19 @@ createTwInfo consumer_key consumer_secret token secret = setCredential tokens cr
     , ("oauth_token_secret", BS8.pack secret)
     ]
 
-watchLikes modId srcId twInfo mgr = concatMapC event .| mapM_C process
+watchLikes modId srcId twInfo mgr = concatMapC (^? _SEvent) .| mapM_C process
  where
-  event (SEvent e) = Just e
-  event _          = Nothing
-
-  process e | e ^. evEvent == "favorite"   && rightUsers = liftIO rt *> pure ()
-            | e ^. evEvent == "unfavorite" && rightUsers = liftIO unrt *> pure ()
-            | otherwise                                  = pure ()
+  process e | e^.evEvent == "favorite"   && rightUsers = liftIO rt   *> pure ()
+            | e^.evEvent == "unfavorite" && rightUsers = liftIO unrt *> pure ()
+            | otherwise                                = pure ()
     where
-      rightUsers =
-        let ETUser srcUser = e ^. evSource
-            ETUser tgtUser = e ^. evTarget
-        in (srcUser ^. userId == modId) && (tgtUser ^. userId == srcId)
-      twId = let Just (ETStatus s) = e ^. evTargetObject in s ^. statusId
-      rt = call twInfo mgr $ retweetId twId
+      rightUsers = case both (^?_ETUser.userId) (e^.evSource, e^.evTarget) of
+        Just (eSrcId, eTgtId) -> (eSrcId == modId) && (eTgtId == srcId)
+        _                     -> False
+
+      twId = e^.evTargetObject ^?! _Just._ETStatus.statusId
+
+      rt   = call twInfo mgr $ retweetId twId
       unrt = call twInfo mgr $ unretweetId twId
 
 
@@ -62,10 +60,10 @@ main = do
   let twInfo = createTwInfo consumer_key consumer_secret auth_token auth_secret
 
   modUser <- call modTwInfo mgr $ accountVerifyCredentials
-  let modId = modUser ^. userId
+  let modId = modUser^.userId
 
   srcUser <- call twInfo mgr $ usersShow (ScreenNameParam sourceName)
-  let srcId = srcUser ^. userId
+  let srcId = srcUser^.userId
 
   runResourceT $ do
     src <- stream modTwInfo mgr userstream
